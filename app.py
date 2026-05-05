@@ -8,7 +8,7 @@ from sentence_transformers import SentenceTransformer
 # LOAD DATA
 # ================================
 
-df = pd.read_csv(r"C:\Users\Bomma\Downloads\Gen AI Materials\GenAI-Powered Intelligent Hiring Assistant using RAG\Final processed data.csv")
+df = pd.read_csv("Final processed data.csv")
 
 job_descriptions = [
     {"role": "Data Analyst", "description": "Python SQL Excel data analysis"},
