@@ -1,15 +1,17 @@
 import streamlit as st
 import pandas as pd
-import re
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 
 # ================================
-# LOAD DATA
+# LOAD DATA (IMPORTANT)
 # ================================
-df = pd.read_csv("Final processed data.csv")
-df_small = df.sample(1000, random_state=42)
-df_small.to_csv("sample_data.csv", index=False)
+
+df = pd.read_csv("sample_data.csv")   # ✅ Make sure this file is in GitHub
+
+# ================================
+# JOB DESCRIPTIONS
+# ================================
 
 job_descriptions = [
     {"role": "Data Analyst", "description": "Python SQL Excel data analysis"},
@@ -24,7 +26,7 @@ jd_df = pd.DataFrame(job_descriptions)
 
 df['Lemmatized_text'] = df['Lemmatized_text'].fillna("").astype(str)
 
-# 🔥 FIXED KEYWORDS
+# Convert string list → actual list
 df['Keywords'] = df['Keywords'].apply(
     lambda x: eval(x) if isinstance(x, str) and x.startswith("[") else []
 )
@@ -46,7 +48,7 @@ all_similarity_scores = cosine_similarity(jd_embeddings, resume_embeddings)
 # UI
 # ================================
 
-st.title("GenAI-Powered Intelligent Hiring Assistant")
+st.title("🚀 GenAI-Powered Intelligent Hiring Assistant")
 
 selected_role = st.selectbox("Select Job Role", jd_df["role"])
 
@@ -63,6 +65,7 @@ def skill_match_score(jd_keywords, resume_keywords):
 
 def experience_score(text):
     wc = len(text.split())
+    
     if wc < 100:
         return 0.3
     elif wc < 300:
@@ -82,7 +85,7 @@ def rank_candidates(jd_index, top_n=5):
     for i in range(len(df)):
         resume_keywords = df.iloc[i]['Keywords']
         
-        # 🔥 RELAXED FILTER
+        # 🔥 FILTER (important for relevance)
         if role == "Data Analyst":
             required = ["python", "sql", "data"]
             if sum(1 for s in required if s in resume_keywords) < 1:
@@ -93,6 +96,7 @@ def rank_candidates(jd_index, top_n=5):
             if sum(1 for s in required if s in resume_keywords) < 1:
                 continue
         
+        # SCORES
         sim = all_similarity_scores[jd_index][i]
         
         skill = skill_match_score(
@@ -117,6 +121,9 @@ def rank_candidates(jd_index, top_n=5):
 def generate_explanation(idx, role):
     skills = df.iloc[idx]['Keywords']
     
+    # ✅ Remove duplicates
+    unique_skills = list(dict.fromkeys(skills))
+    
     if role == "Data Analyst":
         req = ["python", "sql", "excel", "data"]
     elif role == "HR Analyst":
@@ -124,16 +131,18 @@ def generate_explanation(idx, role):
     else:
         req = []
     
-    matched = [s for s in skills if s in req][:3]
+    matched = [s for s in unique_skills if s in req][:3]
     
-    return f"Strong skills in {', '.join(matched)} relevant to {role} role."
-
+    if len(matched) > 0:
+        return f"Strong skills in {', '.join(matched)} relevant to {role} role."
+    else:
+        return f"Relevant experience aligned with {role} requirements."
 
 # ================================
-# BUTTON
+# BUTTON ACTION
 # ================================
 
-if st.button("Find Best Candidate"):
+if st.button("Find Best Candidates"):
     
     jd_index = jd_df[jd_df["role"] == selected_role].index[0]
     
@@ -141,7 +150,7 @@ if st.button("Find Best Candidate"):
     
     if len(results) > 0:
         
-        st.subheader("Top 5 Candidates")
+        st.subheader("🏆 Top Candidates")
         st.success(f"Found {len(results)} matching candidates")
         
         for idx, score in results:
@@ -151,9 +160,9 @@ if st.button("Find Best Candidate"):
             st.markdown(f"""
             ---
             **Candidate ID:** {idx}  
-            **Score:** {round(score,2)}  
+            **Score:** {round(float(score),2)}  
             **Explanation:** {explanation}
             """)
     
     else:
-        st.write("No candidates found")
+        st.warning("No candidates found")
