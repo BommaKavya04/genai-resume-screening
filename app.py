@@ -7,8 +7,9 @@ from sentence_transformers import SentenceTransformer
 # ================================
 # LOAD DATA
 # ================================
-
 df = pd.read_csv("Final processed data.csv")
+df_small = df.sample(1000, random_state=42)
+df_small.to_csv("sample_data.csv", index=False)
 
 job_descriptions = [
     {"role": "Data Analyst", "description": "Python SQL Excel data analysis"},
